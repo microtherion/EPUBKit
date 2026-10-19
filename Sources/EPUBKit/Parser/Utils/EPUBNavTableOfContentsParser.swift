@@ -110,10 +110,7 @@ class EPUBNavTableOfContentsParserImplementation: EPUBNavTableOfContentsParser {
         // STEP 2: Recursively parse the navigation map to build the complete hierarchy
         // The navMap contains the root-level navPoints, each of which may contain
         // nested navPoints creating a tree structure for complex documents
-        if let navToc = xmlElement["body"]["nav"]
-            .all(withAttributes: ["epub:type": "toc"])?
-            .first
-        {
+        if let navToc = xmlElement["body"].firstDescendant(where: { $0.name == "nav" && $0.attributes["epub:type"] == "toc"}) {
             tableOfContents.subTable = evaluateChildren(from: navToc)
         }
 
