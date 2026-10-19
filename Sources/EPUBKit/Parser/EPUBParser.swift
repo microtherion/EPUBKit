@@ -50,6 +50,9 @@ public final class EPUBParser: EPUBParserProtocol {
     /// Parser for NCX table of contents.
     private let tableOfContentsParser: EPUBTableOfContentsParser
 
+    /// Fallback parser for Nav documents
+    private let navTableOfContentsParser: EPUBNavTableOfContentsParser
+
     /// Optional delegate to receive parsing progress notifications.
     /// Set this before calling parse() to monitor the parsing process.
     public weak var delegate: EPUBParserDelegate?
@@ -60,6 +63,7 @@ public final class EPUBParser: EPUBParserProtocol {
         manifestParser = EPUBManifestParserImplementation()
         spineParser = EPUBSpineParserImplementation()
         tableOfContentsParser = EPUBTableOfContentsParserImplementation()
+        navTableOfContentsParser = EPUBNavTableOfContentsParserImplementation()
     }
 
     /// Parses an EPUB document at the specified URL.
@@ -121,12 +125,19 @@ public final class EPUBParser: EPUBParserProtocol {
             // The spine's 'toc' attribute references a manifest item ID
             // We use this to find the actual NCX file path in the manifest
             // This two-step lookup is required by the EPUB specification
-            guard let toc = spine.toc, let fileName = manifest.items[toc]?.path else {
+            if let toc = spine.toc, let fileName = manifest.items[toc]?.path {
+                let tableOfContentsElement = try contentService.tableOfContents(fileName)
+
+                tableOfContents = getTableOfContents(from: tableOfContentsElement)
+            } else if let nav = manifest.items.values.first(where: { $0.property == "nav" }) {
+                let fileName = nav.path
+                let tableOfContentsElement = try contentService.tableOfContents(fileName)
+
+                tableOfContents = getNavTableOfContents(from: tableOfContentsElement)
+                tableOfContents.label = metadata.title ?? ""
+            } else {
                 throw EPUBParserError.tableOfContentsMissing
             }
-            let tableOfContentsElement = try contentService.tableOfContents(fileName)
-
-            tableOfContents = getTableOfContents(from: tableOfContentsElement)
             delegate?.parser(self, didFinishParsing: tableOfContents)
         } catch let error {
             // CRITICAL: Always notify delegate of failures for proper error handling
@@ -224,4 +235,15 @@ extension EPUBParser: EPUBParsable {
         tableOfContentsParser.parse(xmlElement)
     }
 
+    /// Parses the Nav navigation document as a fallback
+    ///
+    /// Some EPUB 3 documents no longer provide an NCX document, so fall back to the mandatory Nav
+    ///
+    /// - Parameter xmlElement: The root ncx XML element from the navigation document
+    /// - Returns: Hierarchical EPUBTableOfContents structure with recursive navigation points
+    public func getNavTableOfContents(from xmlElement: XMLElement) -> EPUBTableOfContents {
+        // Delegate to specialized TOC parser which recursively processes li elements
+        // to build the complete navigation hierarchy with unlimited nesting depth
+        navTableOfContentsParser.parse(xmlElement)
+    }
 }
