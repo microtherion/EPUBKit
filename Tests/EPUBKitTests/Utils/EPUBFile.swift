@@ -19,6 +19,7 @@ enum EPUBFile {
     case theGeographyofBlissBrokenContainer
     case theMetamorphosisBrokenToc
     case theProblemsofPhilosophyBrokenContent
+    case tractatus
 
     var fileName: String {
         switch self {
@@ -38,6 +39,8 @@ enum EPUBFile {
             return "broken_toc_metamorphosis"
         case .theProblemsofPhilosophyBrokenContent:
             return "broken_content_philosophy"
+        case .tractatus:
+            return "tractatus"
         }
     }
 
@@ -46,7 +49,8 @@ enum EPUBFile {
         case .alicesAdventuresinWonderland,
              .theGeographyofBliss,
              .theMetamorphosis,
-             .theProblemsofPhilosophy:
+             .theProblemsofPhilosophy,
+             .tractatus:
             return false
         case .alicesAdventuresinWonderlandBrokenArchive,
              .theGeographyofBlissBrokenContainer,

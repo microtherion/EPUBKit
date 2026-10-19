@@ -24,7 +24,8 @@ struct EPUBParserTests {
             .alicesAdventuresinWonderland,
             .theGeographyofBliss,
             .theMetamorphosis,
-            .theProblemsofPhilosophy
+            .theProblemsofPhilosophy,
+            .tractatus
         ]
         
         for file in validFiles {
